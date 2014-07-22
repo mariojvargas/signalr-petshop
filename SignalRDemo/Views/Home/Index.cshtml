@@ -1,0 +1,416 @@
+﻿@{
+    ViewBag.Title = "Pet Shoppe 2.0";
+    Layout = "~/Views/Shared/_PetShopLayout.cshtml";
+}
+
+<h2>@ViewBag.Title</h2>
+
+<h3>Pets for Sale</h3>
+
+<div id="productsContainer">
+    <ul data-bind='template: { name: "productTemplate", foreach: products }'></ul>
+</div>
+
+@section sidebar
+{
+    <h3>Cart</h3>
+
+    <div id="cartContainer">
+        <div id="cartEmpty" class="alert alert-info" data-bind="visible: isEmpty">
+            <span class="glyphicon glyphicon-info-sign"></span> Your cart is empty.
+        </div>
+        <table id="cart" data-bind="visible: hasItems" class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Product Name</th>
+                    <th class="numericColumn">Quantity</th>
+                    <th class="numericColumn">Unit Price</th>
+                    <th class="numericColumn">Cost</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="cartItems" data-bind='template: { name: "cartItemTemplate", foreach: contents }'></tbody>
+            <tfoot>
+                <tr>
+                    <td>Total =</td>
+                    <td class="numericColumn"><span id="itemTotal" data-bind="text: formattedItemCount"></span></td>
+                    <td></td>
+                    <td class="numericColumn"><span id="cartTotal" data-bind="text: formattedTotalCost"></span></td>
+                    <td></td>
+                </tr>
+            </tfoot>
+        </table>
+
+        <div id="orderOptions" data-bind="visible: hasItems">
+            <button type="button" id="checkOutButton"
+                    class="btn btn-primary"
+                    data-bind="enable: canCheckOut"
+                    data-toggle="modal" 
+                    data-target="#checkOutDialog">
+                <span class="glyphicon glyphicon-upload"></span> Check Out
+            </button>
+            <button type="button" id="clearCartButton"
+                    class="btn btn-danger"
+                    data-bind="enable: hasItems, click: emptyContents">
+                <span class="glyphicon glyphicon-trash"></span> Empty Cart
+            </button>
+        </div>
+
+        <div id="minimumOrderContainer" class="alert alert-warning" data-bind="visible: cannotCheckOut">
+            <span class="glyphicon glyphicon-exclamation-sign"></span> You must order at least
+            <span id="minimumOrder" data-bind="text: minimumOrder"></span>
+            different kinds of animals!
+        </div>
+        <div class="alert alert-success" data-bind="visible: canCheckOut">
+            <span class="glyphicon glyphicon-ok"></span> <strong>Ready to Place Order!</strong>
+        </div>
+
+    </div>
+}
+
+@section overlays {
+    <div id="checkOutDialog" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                    <h4 class="modal-title" id="myModalLabel">Your Order</h4>
+                </div>
+                <div class="modal-body">
+                    <p>
+                        You ordered <span id="finalItemCount" data-bind="text: itemCount"></span> pets!
+                    </p>
+                    <p id="orderDetails" data-bind="text: response"></p>
+                    <p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" data-dismiss="modal">
+                    <span class="glyphicon glyphicon-saved"></span> OK! Can't wait for my order!!</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    @*<div id="checkOutDialog" title="Your Order" data-bind="modalDialog: {
+            canDisplay: isReady,
+            width: 460,
+            doneAction: $root.reset }">
+        <p>
+            You ordered <span id="finalItemCount" data-bind="text: itemCount"></span> pets!
+        </p>
+        <p id="orderDetails" data-bind="text: response"></p>
+        <p>
+        <p><strong>Serialized Order:</strong></p>
+        <textarea id="jsonOutput" data-bind="value: requestSent"></textarea>
+        </p>
+    </div>*@
+}
+
+@section scripts {
+    <script src="~/bundles/petshop"></script>
+
+    <script id="productTemplate" type="text/html">
+        <li class="product">
+            <img data-bind="attr: { src: appRelativeImageUrl(), alt: name, title: name }" />
+            <span class="product-name" data-bind="text: name"></span>
+            <br />
+            <span class="product-unitPrice" data-bind="text: formattedUnitPrice()"></span>
+            <button type="button" class="btn btn-success" data-addtocart="true"><span class="glyphicon glyphicon-plus-sign"></span> Add to Cart</button>
+            <br />
+            <span class="product-sku">SKU: <span data-bind="text: sku"></span></span>
+        </li>
+    </script>
+
+    <script id="cartItemTemplate" type="text/html">
+        <tr>
+            <td>
+                <img data-bind='attr: { src: product.appRelativeImageUrl(), alt: product.name, title: product.name }' />
+                <span data-bind="text: product.name"></span>
+                <br />
+                <span data-bind="text: product.sku"></span>
+            </td>
+            <td class="numericColumn">
+                <input type="text"
+                       class="quantity"
+                       maxlength="2"
+                       size="2"
+                       data-bind="value: editableQuantity,
+                                uniqueName: true,
+                                valueUpdate: 'change',
+                                when: { condition: quantity() <= 0, action: $root.removeItem, param: $data, owner: $root }" />
+            </td>
+            <td class="numericColumn" data-bind="text: product.formattedUnitPrice()"></td>
+            <td class="numericColumn" data-bind="text: formattedCost"></td>
+            <td>
+                <button class="btn btn-warning" data-bind="click: $root.removeItem"><span class="glyphicon glyphicon-minus-sign"></span> Remove</button>
+            </td>
+        </tr>
+    </script>
+
+    @{#region Custom Bindings}
+    <script>
+        // Executes an action if a given a condition is true.
+        // when: { condition: quantity() <= 0, action: $root.removeItem, param: $data, owner: $root }
+        // the $data is passed to the supplied action as one argument.
+        ko.bindingHandlers.when = {
+            update: function (element, valueAccessor) {
+                var data = ko.utils.unwrapObservable(valueAccessor());
+
+                if (true === data.condition) {
+                    data.action.call(data.owner, data.param);
+                }
+            }
+        };
+    </script>
+    @{#endregion Custom Bindings}
+
+    <script>
+        var MinimumUniqueItemTotal = 4;
+        var ProductListEndpoint = '@Url.Content("~/api/Products")';
+        var PlaceOrderEndpoint = '@Url.Content("~/api/Checkout")';
+        var ProductImageUrlFormat = "@Url.Content("~/Content/Images/Products")/{0}.jpg"
+
+        function Product(name, unitPrice, sku) {
+            this.name = name;
+            this.unitPrice = unitPrice;
+            this.sku = sku;
+
+            this.appRelativeImageUrl = function () {
+                return ProductImageUrlFormat.replace(/\{0\}/, this.sku);
+            };
+
+            this.formattedUnitPrice = function () {
+                return "$" + this.unitPrice.toFixed(2);
+            }
+        }
+
+        function ProductsViewModel() {
+            this.products = ko.observableArray();
+        }
+
+        function CheckOutDialogViewModel(shoppingCart) {
+            var self = this;
+
+            self._shoppingCart = shoppingCart;
+
+            self.response = ko.observable("");
+
+            self.itemCount = ko.computed(function () {
+                return self._shoppingCart.itemCount();
+            });
+
+            self.requestSent = ko.computed(function () {
+                // Serialized shopping cart contents
+                return ko.toJSON(self._shoppingCart.contents());
+            });
+
+            self.isReady = ko.observable(false);
+
+            self.reset = function () {
+                self.isReady(false);
+                self.response("");
+                self._shoppingCart.emptyContents();
+            };
+
+            self.placeOrder = function () {
+                // Convert to JavaScript object
+                var orderData = ko.toJS(self._shoppingCart.contents()),
+                    deferred = new $.Deferred();
+
+                $.ajax({
+                    type: "POST",
+                    url: PlaceOrderEndpoint,
+                    data: JSON.stringify(orderData),
+                    contentType: "application/json; charset=utf-8",
+                    dataType: "json"
+                }).done(function (responseFromServer) {
+                    self.response(responseFromServer);
+
+                    self.isReady(true);
+
+                    deferred.resolve();
+                }).fail(function (jqHhr, textStatus, errorThrown) {
+                    deferred.reject("Something horrible happened!" + jqHhr + ", " + textStatus + ", " + errorThrown);
+                });
+
+                return deferred.promise();
+            };
+        }
+
+        function CartItem(product, quantity) {
+            var self = this;
+
+            if ("undefined" === typeof (quantity)) {
+                quantity = 1;
+            }
+
+            this.product = product;
+
+            this.quantity = ko.observable(quantity);
+
+            // Helps to properly parse the value of the field bound to the quantity
+            // Possible bug with Knockout.js:
+            //    When quantity is updated directly in the textbox,
+            //    it is passed to the quantity observable as a string
+            //    instead of as a number.
+            // Note: I am aware that if you enter a number with a leading zero,
+            //       the input field's value does not get replaced with a number
+            //       without a leading zero.
+            // See: http://stackoverflow.com/questions/7395946/knockout-js-json-has-numeric-but-knockout-changes-it-to-string-any-suggestions
+            this.editableQuantity = ko.computed({
+                read: function () {
+                    return this.quantity();
+                },
+
+                write: function (value) {
+                    var parsedValue = parseInt(value, 10);
+
+                    if (isNaN(parsedValue) || parsedValue < 0) {
+                        this.quantity(0);
+                    } else {
+                        this.quantity(parsedValue);
+                    }
+                },
+
+                owner: this
+            });
+
+            this.cost = ko.computed(function () {
+                return this.quantity() * this.product.unitPrice;
+            }, this);
+
+            this.formattedCost = ko.computed(function () {
+                return "$" + this.cost().toFixed(2);
+            }, this);
+        }
+
+        function ShoppingCartViewModel() {
+            var self = this;
+
+            self.minimumOrder = MinimumUniqueItemTotal;
+
+            self.contents = ko.observableArray([]);
+
+            self.hasItems = ko.computed(function () {
+                return self.contents().length > 0;
+            });
+
+            self.isEmpty = ko.computed(function () {
+                return self.contents().length === 0;
+            });
+
+            self.canCheckOut = ko.computed(function () {
+                return self.contents().length >= self.minimumOrder;
+            });
+
+            self.cannotCheckOut = ko.computed(function () {
+                return !self.canCheckOut();
+            });
+
+            self.totalCost = ko.computed(function () {
+                var sum = 0;
+
+                // Using the good ol' for-loop
+                for (var i = 0; i < self.contents().length; i++) {
+                    sum += self.contents()[i].cost();
+                }
+
+                return sum;
+            });
+
+            self.formattedTotalCost = ko.computed(function () {
+                return "$" + self.totalCost().toFixed(2);
+            });
+
+            self.itemCount = ko.computed(function () {
+                var count = 0;
+
+                // Using jQuery.each (much cleaner than the good ol' for-loop (but with a price), see totalCost)
+                $.each(self.contents(), function (index, item) {
+                    count += item.quantity();
+                });
+
+                return count;
+            });
+
+            self.formattedItemCount = ko.computed(function () {
+                return self.itemCount();
+            });
+
+            self.addItem = function (cartItem) {
+                var existingItem = self.findItemBySku(cartItem.product.sku);
+
+                if (null === existingItem) {
+                    self.contents.push(cartItem);
+                } else {
+                    existingItem.quantity(existingItem.quantity() + 1);
+                }
+            };
+
+            self.removeItem = function (cartItemToRemove) {
+                var existingItem = self.findItemBySku(cartItemToRemove.product.sku);
+
+                if (null != existingItem) {
+                    self.contents.remove(existingItem);
+                }
+            };
+
+            self.emptyContents = function () {
+                self.contents.removeAll();
+            };
+
+            self.findItemBySku = function (sku) {
+                return ko.utils.arrayFirst(self.contents(), function (cartItem) {
+                    return sku === cartItem.product.sku;
+                });
+            };
+        }
+
+        $(document).ready(function () {
+            var productsViewModel = new ProductsViewModel();
+            var shoppingCartViewModel = new ShoppingCartViewModel();
+            var checkOutDialogViewModel = new CheckOutDialogViewModel(shoppingCartViewModel);
+
+            $.getJSON(ProductListEndpoint, {}, function (results) {
+                // Convert to appropriate JavaScript Product object. This is by convention and not a necessary step.
+                var mappedResults = $.map(results, function (product) {
+                    return new Product(product.Name, product.UnitPrice, product.Sku);
+                });
+
+                // Populate products ViewModel
+                productsViewModel.products(mappedResults);
+            });
+
+            // Unobtrusive event-handling
+            $("#productsContainer").on("click", "button[data-addtocart]", function (e) {
+                e.preventDefault();
+
+                var $addButton = $(this);
+                var selectedProduct = ko.dataFor(this);
+
+                shoppingCartViewModel.addItem(new CartItem(selectedProduct));
+
+                return false;
+            });
+
+            $("#checkOutButton").click(function (e) {
+                e.preventDefault();
+
+                checkOutDialogViewModel.placeOrder()
+                    .fail(function (errorMessage) {
+                        alert(errorMessage);
+                    });
+            });
+
+            $("#checkOutDialog").on("click", "button[data-dismiss='modal']", function (e) {
+                e.preventDefault();
+
+                checkOutDialogViewModel.reset();
+            });
+
+            ko.applyBindings(productsViewModel, document.getElementById("productsContainer"));
+            ko.applyBindings(shoppingCartViewModel, document.getElementById("cartContainer"));
+            ko.applyBindings(checkOutDialogViewModel, document.getElementById("checkOutDialog"));
+        });
+    </script>
+
+}

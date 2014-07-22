@@ -1,0 +1,118 @@
+﻿
+@{
+    ViewBag.Title = "Processing Department";
+}
+
+@section styles {
+    @Styles.Render("~/Content/petshop")
+}
+
+<h2>@ViewBag.Title</h2>
+
+<table id="recentOrders" class="table table-bordered table-striped">
+    <thead>
+        <tr>
+            <th>Order ID</th>
+            <th>Details</th>
+            <th>Order Date</th>
+        </tr>
+    </thead>
+    <tbody data-bind="template: {name: 'orderLineTemplate', foreach: orders, as: 'order'}"></tbody>
+</table>
+
+@section scripts
+{
+    <script id="orderDetailTemplate" type="text/html">
+        <tr>
+            <td data-bind="text: item.sku">SKU</td>
+            <td data-bind="text: item.name">Product</td>
+            <td data-bind="text: item.unitPrice" class="numericColumn">Unit Price</td>
+            <td data-bind="text: item.quantity" class="numericColumn">Quantity</td>
+        </tr>
+    </script>
+
+    <script id="orderLineTemplate" type="text/html">
+        <tr>
+            <td data-bind="text: order.id"></td>
+            <td>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>SKU</th>
+                            <th>Product</th>
+                            <th>Unit Price</th>
+                            <th>Quantity</th>
+                        </tr>
+                    </thead>
+                    <tbody data-bind="template: {name: 'orderDetailTemplate', foreach: details, as: 'item'}"></tbody>
+                </table>
+            </td>
+            <td data-bind="text:orderDate"></td>
+        </tr>
+    </script>
+
+    @Scripts.Render("~/bundles/knockout")
+
+    @Scripts.Render("~/bundles/jquery")
+    <script src="~/Scripts/jquery.signalR-2.1.0.js"></script>
+    <script src="~/signalr/hubs"></script>
+    <script>
+        // This is a demo using the automatic SignalR proxies.
+        (function (ko, window) {
+            window.viewModel = new OrderProcessingViewModel();
+
+            ko.applyBindings(window.viewModel, document.getElementById("recentOrders"));
+
+            function OrderProcessingViewModel() {
+                var self = this;
+
+                self.orders = ko.observableArray([]);
+            }
+        })(window.ko, window);
+
+        (function ($, console, viewModel) {
+            // Enable logging on client API to see what SignalR is doing behind the scenes!
+            $.connection.hub.logging = true;
+
+            // Get connection to "orderProcessHub". Note use of JavaScript naming convention.
+            var myHub = $.connection.orderProcessHub;
+
+            // Start listening for new orders as they come in via "pushOrder" client function
+            myHub.client.pushOrder = function (order) {
+                displayOrderInPage(order);
+            };
+
+            // Er... Start the connection on the hub.
+            $.connection.hub.start()
+                .done(function () {
+                    console.log("Connected to order processing hub!");
+                });
+
+
+            // Fluff... Not relevant to SignalR...
+            function displayOrderInPage(rawOrder) {
+                var orderInfo = {
+                    id: rawOrder.Id,
+                    details: mapOrderDetails(rawOrder.OrderDetails),
+                    orderDate: new Date(rawOrder.OrderDate)
+                };
+
+                console.log("New order arrived! %s", orderInfo.id);
+
+                viewModel.orders.push(orderInfo);
+
+                function mapOrderDetails(orderDetails) {
+                    return $.map(orderDetails, function (item) {
+                        return {
+                            sku: item.Product.Sku,
+                            name: item.Product.Name,
+                            unitPrice: "$" + item.Product.UnitPrice.toFixed(2),
+                            quantity: item.Quantity
+                        };
+                    });
+                }
+            }
+        })(window.jQuery, window.console, window.viewModel);
+    </script>
+
+}
