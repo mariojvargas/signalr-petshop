@@ -1,5 +1,5 @@
 ﻿@{
-    ViewBag.Title = "Pet Shoppe 2.0";
+    ViewBag.Title = "SignalR Pet Shoppe";
     Layout = "~/Views/Shared/_PetShopLayout.cshtml";
 }
 
@@ -43,7 +43,7 @@
 
         <div id="orderOptions" data-bind="visible: hasItems">
             <button type="button" id="checkOutButton"
-                    class="btn btn-primary"
+                    class="btn btn-primary btn-lg"
                     data-bind="enable: canCheckOut"
                     data-toggle="modal" 
                     data-target="#checkOutDialog">
@@ -62,7 +62,7 @@
             different kinds of animals!
         </div>
         <div class="alert alert-success" data-bind="visible: canCheckOut">
-            <span class="glyphicon glyphicon-ok"></span> <strong>Ready to Place Order!</strong>
+            <span class="glyphicon glyphicon-ok-sign"></span> <strong>Ready to Place Order!</strong>
         </div>
 
     </div>
@@ -77,7 +77,8 @@
                     <h4 class="modal-title" id="myModalLabel">Your Order</h4>
                 </div>
                 <div class="modal-body">
-                    <p>
+                    <p class="alert alert-success">
+                        <span class="glyphicon glyphicon-saved"></span> <strong>Congrats!</strong>
                         You ordered <span id="finalItemCount" data-bind="text: itemCount"></span> pets!
                     </p>
                     <p id="orderDetails" data-bind="text: response"></p>
@@ -85,24 +86,11 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-primary" data-dismiss="modal">
-                    <span class="glyphicon glyphicon-saved"></span> OK! Can't wait for my order!!</button>
+                    <span class="glyphicon glyphicon-ok"></span> OK! Can't wait for my order!!</button>
                 </div>
             </div>
         </div>
     </div>
-    @*<div id="checkOutDialog" title="Your Order" data-bind="modalDialog: {
-            canDisplay: isReady,
-            width: 460,
-            doneAction: $root.reset }">
-        <p>
-            You ordered <span id="finalItemCount" data-bind="text: itemCount"></span> pets!
-        </p>
-        <p id="orderDetails" data-bind="text: response"></p>
-        <p>
-        <p><strong>Serialized Order:</strong></p>
-        <textarea id="jsonOutput" data-bind="value: requestSent"></textarea>
-        </p>
-    </div>*@
 }
 
 @section scripts {
@@ -130,7 +118,7 @@
             </td>
             <td class="numericColumn">
                 <input type="text"
-                       class="quantity"
+                       class="quantity form-control input-sm pull-right"
                        maxlength="2"
                        size="2"
                        data-bind="value: editableQuantity,
@@ -141,7 +129,8 @@
             <td class="numericColumn" data-bind="text: product.formattedUnitPrice()"></td>
             <td class="numericColumn" data-bind="text: formattedCost"></td>
             <td>
-                <button class="btn btn-warning" data-bind="click: $root.removeItem"><span class="glyphicon glyphicon-minus-sign"></span> Remove</button>
+                <button class="btn btn-warning" data-bind="click: $root.removeItem">
+                <span class="glyphicon glyphicon-remove-sign"></span> Remove</button>
             </td>
         </tr>
     </script>

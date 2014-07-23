@@ -26,7 +26,7 @@ namespace IntroToKnockoutJs.Controllers
                 new Product()
                 {
                     Sku = "DOG-0001",
-                    Name = "Bichon Frise",
+                    Name = "Bichon Frisé",
                     UnitPrice = 300.00M
                 },
                 new Product()
@@ -80,7 +80,7 @@ namespace IntroToKnockoutJs.Controllers
                 new Product() 
                 {
                     Sku = "REP-0004",
-                    Name = "Mato Lizard",
+                    Name = "Lizard",
                     UnitPrice = 19.95M
                 },
                 new Product() 
@@ -98,7 +98,7 @@ namespace IntroToKnockoutJs.Controllers
                 new Product()
                 {
                     Sku = "FSH-002",
-                    Name = "Betta",
+                    Name = "Betta Fish",
                     UnitPrice = 16.50M
                 },
                 new Product()

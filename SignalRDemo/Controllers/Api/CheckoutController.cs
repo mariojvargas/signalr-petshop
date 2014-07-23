@@ -25,7 +25,7 @@ namespace IntroToKnockoutJs.Controllers
 
             Order orderInfo = CreateNewOrder(cartItems);
 
-            string response = String.Format("Server Responded: Thank you for ordering {0} amazing pets. Your total is {1:C}. Your order ID is {2}",
+            string response = String.Format("Thank you for ordering {0} amazing pets. Your total is {1:C}. Your order ID is {2}",
                 itemTotal,
                 orderTotal,
                 orderInfo.Id);

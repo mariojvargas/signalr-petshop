@@ -9,16 +9,26 @@
 
 <h2>@ViewBag.Title</h2>
 
-<table id="recentOrders" class="table table-bordered table-striped">
-    <thead>
-        <tr>
-            <th>Order ID</th>
-            <th>Details</th>
-            <th>Order Date</th>
-        </tr>
-    </thead>
-    <tbody data-bind="template: {name: 'orderLineTemplate', foreach: orders, as: 'order'}"></tbody>
-</table>
+<section id="orderSection">
+    <table id="recentOrders"
+           class="table table-bordered table-striped"
+           data-bind="visible: hasOrders"
+           style="display:none;">
+        <thead>
+            <tr>
+                <th>Order ID</th>
+                <th>Details</th>
+                <th>Order Date</th>
+            </tr>
+        </thead>
+        <tbody data-bind="template: {name: 'orderLineTemplate', foreach: orders, as: 'order'}"></tbody>
+    </table>
+
+    <div class="alert alert-info">
+        <img src="~/Content/Images/spinner-sm-info.gif" />
+        <strong>Waiting for new orders to arrive. Sit tight!</strong>
+    </div>
+</section>
 
 @section scripts
 {
@@ -61,15 +71,20 @@
         (function (ko, window) {
             window.viewModel = new OrderProcessingViewModel();
 
-            ko.applyBindings(window.viewModel, document.getElementById("recentOrders"));
+            ko.applyBindings(window.viewModel, document.getElementById("orderSection"));
 
             function OrderProcessingViewModel() {
                 var self = this;
 
                 self.orders = ko.observableArray([]);
+
+                self.hasOrders = ko.computed(function () {
+                    return self.orders().length > 0;
+                });
             }
         })(window.ko, window);
 
+        // Relevant SignalR code...
         (function ($, console, viewModel) {
             // Enable logging on client API to see what SignalR is doing behind the scenes!
             $.connection.hub.logging = true;
@@ -85,7 +100,8 @@
             // Er... Start the connection on the hub.
             $.connection.hub.start()
                 .done(function () {
-                    console.log("Connected to order processing hub!");
+                    var transportName = $.connection.hub.transport.name;
+                    console.log("Connected to order processing hub using transport [%s]!", transportName);
                 });
 
 

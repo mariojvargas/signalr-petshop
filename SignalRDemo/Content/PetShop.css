@@ -29,7 +29,7 @@
     
     table#cart .quantity
     {
-        width: 24px;
+        width: 46px;
     }
     
 #productsContainer
@@ -54,9 +54,17 @@
 
             #productsContainer ul li.product img
             {
-                min-width: 200px;
-                max-height: 150px;
+                width: 200px;
+                height: 150px;
                 display: block;
+                padding: 4px;
+                border: solid 1px #ccc;
+                background: #fff;
+                
+                border-radius: 5px;
+                -moz-box-sizing: border-box;
+                -webkit-box-sizing: border-box;
+                box-sizing: border-box;
             }
         
             #productsContainer .product-name
