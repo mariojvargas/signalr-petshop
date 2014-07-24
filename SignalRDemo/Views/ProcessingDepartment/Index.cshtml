@@ -97,13 +97,12 @@
                 displayOrderInPage(order);
             };
 
-            // Er... Start the connection on the hub.
+            // Er... Start the connection to the hub.
             $.connection.hub.start()
                 .done(function () {
                     var transportName = $.connection.hub.transport.name;
                     console.log("Connected to order processing hub using transport [%s]!", transportName);
                 });
-
 
             // Fluff... Not relevant to SignalR...
             function displayOrderInPage(rawOrder) {
