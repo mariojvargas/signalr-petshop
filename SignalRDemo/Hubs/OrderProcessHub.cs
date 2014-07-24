@@ -12,6 +12,12 @@ namespace SignalRDemo.Hubs
             return base.OnConnected();
         }
 
+        public override Task OnReconnected()
+        {
+            Groups.Add(Context.ConnectionId, PetShopGroups.ProcessingDepartment);
+            return base.OnReconnected();
+        }
+
         public override Task OnDisconnected()
         {
             Groups.Remove(Context.ConnectionId, PetShopGroups.ProcessingDepartment);
